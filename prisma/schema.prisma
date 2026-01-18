@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Author {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quotes    Quote[]
+}
+
+model Quote {
+  id              String   @id @default(cuid())
+  text            String
+  textTranslated  String?
+  originalLang    String   @default("en")
+  source          String?
+  sourceUrl       String?
+  sourceTimestamp String?
+  context         String?
+  authorId        String
+  author          Author   @relation(fields: [authorId], references: [id])
+  contributorId   String?
+  contributor     User?    @relation(fields: [contributorId], references: [id])
+  views           Int      @default(0)
+  searchHits      Int      @default(0)
+  likes           Like[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([contributorId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  xp        Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quotes    Quote[]
+  likes     Like[]
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  visitorId String
+  user      User?    @relation(fields: [visitorId], references: [id])
+  quoteId   String
+  quote     Quote    @relation(fields: [quoteId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([visitorId, quoteId])
+  @@index([quoteId])
+}
