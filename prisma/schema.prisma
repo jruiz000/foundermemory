@@ -20,36 +20,101 @@ model Author {
 }
 
 model Quote {
-  id              String   @id @default(cuid())
+  id              String            @id @default(cuid())
   text            String
   textTranslated  String?
-  originalLang    String   @default("en")
+  originalLang    String            @default("en")
   source          String?
   sourceUrl       String?
   sourceTimestamp String?
   context         String?
   authorId        String
-  author          Author   @relation(fields: [authorId], references: [id])
+  author          Author            @relation(fields: [authorId], references: [id])
   contributorId   String?
-  contributor     User?    @relation(fields: [contributorId], references: [id])
-  views           Int      @default(0)
-  searchHits      Int      @default(0)
+  contributor     User?             @relation(fields: [contributorId], references: [id])
+  views           Int               @default(0)
+  searchHits      Int               @default(0)
   likes           Like[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  tags            QuoteTag[]
+  savedBy         SavedQuote[]
+  collections     CollectionQuote[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([authorId])
   @@index([contributorId])
 }
 
+model Tag {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  quotes    QuoteTag[]
+  createdAt DateTime   @default(now())
+}
+
+model QuoteTag {
+  id      String @id @default(cuid())
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  tagId   String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, tagId])
+  @@index([tagId])
+}
+
 model User {
+  id             String       @id @default(cuid())
+  email          String?      @unique
+  name           String?
+  avatarUrl      String?
+  xp             Int          @default(0)
+  preferredLang  String       @default("en")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  quotes         Quote[]
+  savedQuotes    SavedQuote[]
+  collections    Collection[]
+}
+
+model SavedQuote {
   id        String   @id @default(cuid())
-  email     String?  @unique
-  name      String?
-  xp        Int      @default(0)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quoteId   String
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  quotes    Quote[]
+
+  @@unique([userId, quoteId])
+  @@index([userId])
+  @@index([quoteId])
+}
+
+model Collection {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotes      CollectionQuote[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+}
+
+model CollectionQuote {
+  id           String     @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  quoteId      String
+  quote        Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([collectionId, quoteId])
+  @@index([collectionId])
+  @@index([quoteId])
 }
 
 model Like {

@@ -81,12 +81,24 @@ export function QuoteCard({ quote }: QuoteCardProps) {
   );
 }
 
+function generateUUID(): string {
+  // Fallback for browsers that don't support crypto.randomUUID
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback using crypto.getRandomValues
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (crypto.getRandomValues(new Uint8Array(1))[0] & 15) >> (c === "x" ? 0 : 3);
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 function getVisitorId(): string {
   if (typeof window === "undefined") return "";
   
   let visitorId = localStorage.getItem("visitorId");
   if (!visitorId) {
-    visitorId = crypto.randomUUID();
+    visitorId = generateUUID();
     localStorage.setItem("visitorId", visitorId);
   }
   return visitorId;
