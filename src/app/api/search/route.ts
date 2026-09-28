@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { openai, LIBRARIAN_SYSTEM_PROMPT } from "@/lib/openai";
+import { getOpenAI, LIBRARIAN_SYSTEM_PROMPT } from "@/lib/openai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use AI to select relevant quotes
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: LIBRARIAN_SYSTEM_PROMPT },

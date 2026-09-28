@@ -1,12 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  enabled: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -15,11 +16,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const enabled = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [loading, setLoading] = useState(enabled);
+  const supabase = useMemo(() => (enabled ? createClient() : null), [enabled]);
 
   useEffect(() => {
+    if (!supabase) return;
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -36,9 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const signInWithGoogle = async () => {
+    if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -48,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithEmail = async (email: string) => {
+    if (!supabase) return { error: new Error("Authentication is not configured") };
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -58,13 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signInWithGoogle, signInWithEmail, signOut }}
+      value={{ user, loading, enabled, signInWithGoogle, signInWithEmail, signOut }}
     >
       {children}
     </AuthContext.Provider>

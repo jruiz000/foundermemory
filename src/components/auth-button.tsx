@@ -7,7 +7,7 @@ import { User, LogOut, Bookmark, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 export function AuthButton() {
-  const { user, loading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
+  const { user, loading, enabled, signInWithGoogle, signInWithEmail, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState("");
@@ -17,6 +17,8 @@ export function AuthButton() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (!enabled) return null;
 
   if (loading) {
     return (
